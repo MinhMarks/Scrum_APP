@@ -16,9 +16,28 @@ const app = express();
 // =====================
 // 🧩 Middleware
 // =====================
+const allowedOrigins = process.env.CORS_ORIGIN 
+  ? process.env.CORS_ORIGIN.split(',').map(o => o.trim())
+  : ["http://localhost:5173"];
+
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || "http://localhost:5173",
+    origin: (origin, callback) => {
+      // Cho phép requests không có origin (mobile apps, Postman, etc.)
+      if (!origin) return callback(null, true);
+      
+      // Cho phép tất cả Vercel preview URLs
+      if (origin.endsWith('.vercel.app')) {
+        return callback(null, true);
+      }
+      
+      // Kiểm tra whitelist
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      
+      callback(new Error('Not allowed by CORS'));
+    },
     credentials: true,
   })
 );
